@@ -1,62 +1,71 @@
+import os
+
 import pandas as pd
 
-# Завдання для всіх варіантів
-# 1. Завантажити дані з файлу data/sales_data.csv у DataFrame.
-# 2. Вивести перші 5 рядків DataFrame, отримати загальну інформацію про нього та статистичні характеристики числових стовпців.
+# Робочою папкою робимо корінь репозиторію (папку над src),
+# щоб шлях data/sales_data.csv працював незалежно від того, звідки запущено програму
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
-# Ваш код починається тут
-
-# 1. Завантаження даних
+# ===== Завдання 1: Завантаження та первинний аналіз даних =====
+print("===== Завдання 1: Завантаження та первинний аналіз даних =====")
 df = pd.read_csv('data/sales_data.csv', parse_dates=['date'])
 
-# 2. Первинний аналіз даних
 print("Перші 5 рядків:")
 print(df.head())
+print("\nОстанні 5 рядків:")
+print(df.tail())
 print("\nЗагальна інформація:")
 df.info()
 print("\nСтатистичні характеристики:")
 print(df.describe())
 
+# ===== Завдання 2: Фільтрація даних (product_id дорівнює 5 або 10) =====
+print("\n===== Завдання 2: Фільтрація даних =====")
+filtered_df = df[(df['product_id'] == 5) | (df['product_id'] == 10)]
+print(filtered_df)
 
-# Подальший код для вашого варіанту
+# ===== Завдання 3: Сортування даних (за order_id, зростання) =====
+print("\n===== Завдання 3: Сортування даних =====")
+sorted_df = df.sort_values(by='order_id', ascending=True)
+print(sorted_df)
 
-# Приклад виконання завдання (з лекції)
-# Розкоментуйте та адаптуйте для свого варіанту
+# ===== Завдання 4: Групування (за date і store_id, кількість унікальних товарів) =====
+print("\n===== Завдання 4: Групування та агрегування даних =====")
+grouped_df = df.groupby(['date', 'store_id'])['product_id'].nunique().reset_index(name='unique_products')
+print(grouped_df)
 
-# # 3. Фільтрація даних
-# filtered_df = df[(df['store_id'] == 1) & (df['quantity'] > 2)]
-# print("\nВідфільтровані дані:")
-# print(filtered_df)
-#
-# # 4. Сортування даних
-# sorted_df = df.sort_values(by=['date', 'order_id'], ascending=[True, False])
-# print("\nВідсортовані дані:")
-# print(sorted_df)
-#
-# # 5. Групування та агрегування даних
-# grouped_df = df.groupby(['store_id', 'product_id'])['quantity'].sum().reset_index()
-# print("\nЗгруповані дані:")
-# print(grouped_df)
-#
-# # 6. Додавання стовпця
-# # Спочатку обробимо пропущені значення в 'price', щоб уникнути помилок
-# df['price'] = df.groupby('store_id')['price'].transform(lambda x: x.fillna(x.mean()))
-# df['total_amount'] = df['quantity'] * df['price']
-# print("\nДані з новим стовпцем total_amount:")
-# print(df)
-#
-# # 7. Видалення стовпців
-# df_after_drop = df.drop(columns=['order_id', 'product_id'])
-# print("\nДані після видалення стовпців:")
-# print(df_after_drop)
-#
-# # 8. Обробка пропущених значень (вже частково зроблено)
-# # df['price'] = df.groupby('store_id')['price'].transform(lambda x: x.fillna(x.mean()))
-# print("\nДані після заповнення пропущених значень в 'price':")
-# print(df)
-#
-# # 9. Створення зведеної таблиці
-# df['month'] = df['date'].dt.month
-# pivot_table = df.pivot_table(values='total_amount', index='store_id', columns='month', aggfunc='sum')
-# print("\nЗведена таблиця:")
-# print(pivot_table)
+
+# ===== Завдання 5: Додавання стовпця price_category =====
+# low: price < 50, medium: 50 <= price <= 100, high: price > 100
+def get_price_category(price):
+    if pd.isna(price):
+        return None  # ціни немає, тому категорію не визначаємо
+    elif price < 50:
+        return 'low'
+    elif price <= 100:
+        return 'medium'
+    else:
+        return 'high'
+
+
+print("\n===== Завдання 5: Додавання нового стовпця =====")
+df['price_category'] = df['price'].apply(get_price_category)
+print(df)
+
+# ===== Завдання 6: Видалення стовпців store_id та product_id =====
+print("\n===== Завдання 6: Видалення стовпців =====")
+df_after_drop = df.drop(columns=['store_id', 'product_id'])
+print(df_after_drop)
+
+# ===== Завдання 7: Видалення рядків з пропущеними значеннями =====
+print("\n===== Завдання 7: Обробка пропущених значень =====")
+print("Кількість пропущених значень у стовпцях:")
+print(df_after_drop.isna().sum())
+df_clean = df_after_drop.dropna()
+print(f"\nРядків до видалення: {len(df_after_drop)}, після видалення: {len(df_clean)}")
+print(df_clean)
+
+# ===== Завдання 8: Зведена таблиця (рядки - date, стовпці - price_category, значення - max quantity) =====
+print("\n===== Завдання 8: Створення зведеної таблиці =====")
+pivot_table = df_clean.pivot_table(values='quantity', index='date', columns='price_category', aggfunc='max')
+print(pivot_table)
